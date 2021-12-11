@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Authors>Louis S. Berman</Authors>
+    <Company>Louis S. Berman</Company>
+    <Description>A basic downloader for Dukascopy tickdata.</Description>
+    <Copyright>Copyright 2021 by Louis S. Berman</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Be.IO-netstandard" Version="1.0.3" />
+    <PackageReference Include="FluentCommandLineParser-netstandard" Version="1.4.3.13" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
+    <PackageReference Include="SevenZip" Version="19.0.0" />
+    <PackageReference Include="SquidEyes.Trading" Version="1.0.2" />
+  </ItemGroup>
+
+</Project>

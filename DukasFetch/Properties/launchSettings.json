@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "DukasFetch": {
+      "commandName": "Project",
+      "commandLineArgs": "--folder=C:\\Users\\trader\\Documents\\TickData"
+    }
+  }
+}
