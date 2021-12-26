@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using SquidEyes.Trading.Context;
 using SquidEyes.Trading.FxData;
 using System.Text;
+using SquidEyes.Basics;
 using static SquidEyes.Trading.FxData.Source;
 
 namespace DukasFetch;
@@ -34,8 +35,6 @@ internal class Worker : BackgroundService
         if (!Directory.Exists(settings.Folder))
             Directory.CreateDirectory(settings.Folder!);
 
-        var (jobs, skipped) = GetFetchJobs();
-
         var sb = new StringBuilder();
 
         sb.Append($"Symbols: {string.Join(",", settings.Symbols!)}");
@@ -45,9 +44,48 @@ internal class Worker : BackgroundService
 
         logger.LogInformation(sb.ToString());
 
+        if (await ProcessFetchJobsAsync(stoppingToken))
+            ProcessBundleJobs();
+
+        await host.StopAsync(stoppingToken);
+    }
+
+    private void ProcessBundleJobs()
+    {
+        var (jobs, skipped) = GetBundleJobs();
+
+        if (jobs.Count == 0)
+        {
+            logger.LogWarning("There are NO MISSING bundle files!");
+        }
+        else
+        {
+            logger.LogInformation($"ENQUEUED {jobs.Count:N0} BUNDLE jobs");
+
+            try
+            {
+                foreach (var job in jobs)
+                    job.BundleSaveAndLog(logger, settings.Folder!);
+
+                logger.LogInformation(
+                    $"CREATED {jobs.Count:N0} bundles (skipped {skipped:N0})");
+            }
+            catch (Exception error)
+            {
+                logger.LogError(error.Message);
+            }
+        }
+    }
+
+    private async Task<bool> ProcessFetchJobsAsync(CancellationToken stoppingToken)
+    {
+        var (jobs, skipped) = GetFetchJobs();
+
         if (jobs.Count == 0)
         {
             logger.LogWarning("There are NO UNFETCHED tick-data files!");
+
+            return true;
         }
         else
         {
@@ -58,7 +96,7 @@ internal class Worker : BackgroundService
                 foreach (var job in jobs)
                 {
                     if (stoppingToken.IsCancellationRequested)
-                        return;
+                        return false;
 
                     await job.FetchSaveAndLogAsync(
                         logger, settings.Folder!, stoppingToken);
@@ -66,20 +104,56 @@ internal class Worker : BackgroundService
 
                 logger.LogInformation(
                     $"FETCHED & SAVED {jobs.Count:N0} tick-sets (skipped {skipped:N0})");
+
+                return true;
             }
             catch (Exception error)
             {
                 logger.LogError(error.Message);
+
+                return false;
             }
         }
-
-        await host.StopAsync(stoppingToken);
     }
 
     private HashSet<string> GetFileNames()
     {
         return new HashSet<string>(Directory.GetFiles(settings.Folder!, "*.*",
             SearchOption.AllDirectories).Select(f => Path.GetFileName(f)));
+    }
+
+    private (List<BundleJob> Jobs, int Skipped) GetBundleJobs()
+    {
+        var fileNames = GetFileNames();
+
+        var jobs = new List<BundleJob>();
+        var skipped = 0;
+
+        var limitDate = DateTime.UtcNow.ToEasternFromUtc()
+            .AsFunc(d => new DateOnly(d.Year, d.Month, 1));
+
+        for (var year = Known.MinYear; year <= Known.MaxYear; year++)
+        {
+            for (var month = 1; month <= 12; month++)
+            {
+                var jobDate = new DateOnly(year, month, 1);
+
+                if (jobDate >= limitDate)
+                    continue;
+
+                foreach (var pair in Known.Pairs.Values)
+                {
+                    var bundle = new Bundle(Dukascopy, pair, year, month);
+
+                    if (fileNames.Contains(bundle.FileName))
+                        skipped++;
+                    else
+                        jobs.Add(new BundleJob(pair.Symbol, year, month));
+                }
+            }
+        }
+
+        return (jobs, skipped);
     }
 
     private (List<FetchJob> Jobs, int Skipped) GetFetchJobs()
@@ -93,7 +167,7 @@ internal class Worker : BackgroundService
 
         var maxTradeDate = DateTime.UtcNow.ToTradeDate(false).AddDays(-1);
 
-        int skipped = 0;
+        var skipped = 0;
 
         var jobs = new List<FetchJob>();
 

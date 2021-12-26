@@ -25,7 +25,7 @@ namespace DukasFetch
         public Pair Pair { get; }
         public DateOnly TradeDate { get; }
 
-        public async Task FetchSaveAndLogAsync(ILogger logger, 
+        public async Task FetchSaveAndLogAsync(ILogger logger,
             string folder, CancellationToken cancellationToken)
         {
             var tickSet = new TickSet(Source.Dukascopy, Pair, TradeDate);
@@ -33,7 +33,7 @@ namespace DukasFetch
             string Save(SaveAs saveAs)
             {
                 var fullPath = tickSet.GetFullPath(folder, saveAs);
-                
+
                 fullPath.EnsurePathExists(false);
 
                 using var stream = File.Create(fullPath);
@@ -56,7 +56,8 @@ namespace DukasFetch
                 if (!success)
                     throw new InvalidOperationException();
 
-                tickSet.AddRange(ticks);
+                if (ticks != null)
+                    tickSet.AddRange(ticks);
             }
 
             var csv = Save(SaveAs.CSV);

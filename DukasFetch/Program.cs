@@ -48,7 +48,7 @@ bool TryGetSettings(out Settings? settings)
 
     parser.Setup(x => x.MinYear)
          .As('y', "minyear")
-         .SetDefault(2020)
+         .SetDefault(2018)
          .WithDescription("The first year to download ticks for (min/default = 2018)");
 
     parser.SetupHelp("?", "help")
