@@ -175,8 +175,8 @@ internal class Worker : BackgroundService
         {
             var tickSet = new TickSet(Dukascopy, pair, tradeDate);
 
-            var csv = tickSet.GetFileName(SaveAs.CSV);
-            var sts = tickSet.GetFileName(SaveAs.STS);
+            var csv = tickSet.GetFileName(DataKind.CSV);
+            var sts = tickSet.GetFileName(DataKind.STS);
 
             return fileNames!.Contains(csv) && fileNames.Contains(sts);
         }

@@ -38,9 +38,9 @@ namespace DukasFetch
                 var tickSet = new TickSet(Source.Dukascopy, Pair, tradeDate);
 
                 using var tickSetStream = File.OpenRead(
-                    tickSet.GetFullPath(basePath, SaveAs.STS));
+                    tickSet.GetFullPath(basePath, DataKind.STS));
 
-                tickSet.LoadFromStream(tickSetStream, SaveAs.STS);
+                tickSet.LoadFromStream(tickSetStream, DataKind.STS);
 
                 bundle.Add(tickSet);
 

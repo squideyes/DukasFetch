@@ -30,22 +30,21 @@ namespace DukasFetch
         {
             var tickSet = new TickSet(Source.Dukascopy, Pair, TradeDate);
 
-            string Save(SaveAs saveAs)
+            string Save(DataKind dataKind)
             {
-                var fullPath = tickSet.GetFullPath(folder, saveAs);
+                var fullPath = tickSet.GetFullPath(folder, dataKind);
 
                 fullPath.EnsurePathExists(false);
 
-                using var stream = File.Create(fullPath);
+                using (var stream = File.OpenWrite(fullPath))
+                    tickSet.SaveToStream(stream, dataKind);
 
-                tickSet.SaveToStream(stream, saveAs);
-
-                return tickSet.GetFileName(saveAs);
+                return tickSet.GetFileName(dataKind);
             }
 
             var fetcher = new Fetcher(tickSet);
 
-            for (int hour = 0; hour < 24; hour++)
+            for (var hour = 0; hour < 24; hour++)
             {
                 if (cancellationToken.IsCancellationRequested)
                     return;
@@ -60,9 +59,9 @@ namespace DukasFetch
                     tickSet.AddRange(ticks);
             }
 
-            var csv = Save(SaveAs.CSV);
+            var csv = Save(DataKind.CSV);
 
-            var sts = Save(SaveAs.STS);
+            var sts = Save(DataKind.STS);
 
             logger.LogInformation(
                 $"FETCHED {tickSet.Count:N0} ticks (SAVED to {csv} and {sts})");
