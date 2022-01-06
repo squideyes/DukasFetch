@@ -25,6 +25,9 @@ namespace DukasFetch
         public Pair Pair { get; }
         public DateOnly TradeDate { get; }
 
+        public override string ToString() =>
+            $"{Pair} {TradeDate.ToString("MM/dd/yyyy")}";
+
         public async Task FetchSaveAndLogAsync(ILogger logger,
             string folder, CancellationToken cancellationToken)
         {
@@ -53,7 +56,8 @@ namespace DukasFetch
                     await fetcher.GetTicksAsync(hour, cancellationToken);
 
                 if (!success)
-                    throw new InvalidOperationException();
+                    throw new InvalidOperationException(
+                        $"NO ticks returned for hour {hour} ({this})");
 
                 if (ticks != null)
                     tickSet.AddRange(ticks);
