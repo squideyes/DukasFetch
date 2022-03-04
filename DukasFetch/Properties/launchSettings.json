@@ -2,7 +2,7 @@
   "profiles": {
     "DukasFetch": {
       "commandName": "Project",
-      "commandLineArgs": "--folder=C:\\Users\\trader\\Documents\\TickData"
+      "commandLineArgs": "--folder=C:\\TickData --minyear=2020"
     }
   }
 }

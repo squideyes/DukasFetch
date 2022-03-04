@@ -129,10 +129,12 @@ internal class Worker : BackgroundService
         var jobs = new List<BundleJob>();
         var skipped = 0;
 
-        var limitDate = DateTime.UtcNow.ToEasternFromUtc()
-            .AsFunc(d => new DateOnly(d.Year, d.Month, 1));
+        var limitDate = DateTime.UtcNow.ToEasternFromUtc().AsFunc(
+            d => new DateOnly(d.Year, d.Month, 1));
 
-        for (var year = Known.MinYear; year <= Known.MaxYear; year++)
+        var minYear = settings.MinYear;
+
+        for (var year = minYear; year <= Known.MaxYear; year++)
         {
             for (var month = 1; month <= 12; month++)
             {
@@ -160,12 +162,12 @@ internal class Worker : BackgroundService
     {
         var fileNames = GetFileNames();
 
-        var minTradeDate = new DateOnly(settings.MinYear, 1, 1);
+        var minTradeDate = new DateOnly(settings.MinYear, 1, 1)
+            .ToThisOrNextTradeDate();
 
-        while (minTradeDate.DayOfWeek != DayOfWeek.Monday)
-            minTradeDate = minTradeDate.AddDays(1);
-
-        var maxTradeDate = DateTime.UtcNow.ToTradeDate(false).AddDays(-1);
+        var limitDate = DateTime.UtcNow.ToTradeDate(false).AsFunc(d => 
+            new DateOnly(d.Year, d.Month, DateTime.DaysInMonth(
+                d.Year, d.Month)).AddMonths(-1)).ToThisOrPrevTradeDate();        
 
         var skipped = 0;
 
@@ -184,7 +186,7 @@ internal class Worker : BackgroundService
         foreach (var pair in settings.Symbols!.Select(s => Known.Pairs[s]))
         {
             for (var tradeDate = minTradeDate;
-                tradeDate <= maxTradeDate; tradeDate = tradeDate.AddDays(1))
+                tradeDate <= limitDate; tradeDate = tradeDate.AddDays(1))
             {
                 if (!tradeDate.IsTradeDate())
                     continue;
